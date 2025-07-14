@@ -13,6 +13,7 @@ all:
 
 toolchain:
 # apt install --no-install-recommends wget cmake make ninja-build pkgconf
+	$(RM) -r $(TRIMUI)
 	mkdir -p $(TRIMUI)
 	tar zxf aarch64-linux-gnu-7.5.0-linaro.tgz -C $(TRIMUI) --strip-components=1
 	mv $(TRIMUI)/aarch64-linux-gnu/libc $(SYSROOT)
@@ -24,8 +25,11 @@ download:
 	wget -qO- https://github.com/harfbuzz/harfbuzz/releases/download/7.3.0/harfbuzz-7.3.0.tar.xz | tar Jxf - -C $(TMPDIR)
 	wget -qO- https://github.com/fribidi/fribidi/releases/download/v1.0.16/fribidi-1.0.16.tar.xz | tar Jxf - -C $(TMPDIR)
 	wget -qO- https://github.com/libass/libass/releases/download/0.17.4/libass-0.17.4.tar.xz | tar Jxf - -C $(TMPDIR)
-	wget -qO- https://ffmpeg.org/releases/ffmpeg-6.1.1.tar.xz | tar Jxf - -C $(TMPDIR)
+	wget -qO- https://dri.freedesktop.org/libdrm/libdrm-2.4.120.tar.xz | tar Jxf - -C $(TMPDIR)
+	wget -qO- https://ffmpeg.org/releases/ffmpeg-4.4.1.tar.xz | tar Jxf - -C $(TMPDIR)
 	wget -qO- https://github.com/mpv-player/mpv/archive/v0.36.0.tar.gz | tar zxf - -C $(TMPDIR)
+	patch -d $(TMPDIR)/ffmpeg-4.4.1 -Nbp1 -i $(CURDIR)/patches/ffmpeg-v4l2-request.patch
+	patch -d $(TMPDIR)/ffmpeg-4.4.1 -Nbp1 -i $(CURDIR)/patches/ffmpeg-v4l2-drmprime.patch
 
 SDL2:
 	tar zxf SDL2-2.26.1.GE8300.tgz -C $(TMPDIR)
@@ -101,14 +105,23 @@ libass: harfbuzz fribidi
 	meson compile -C build/libass
 	meson install -C build/libass --destdir=$(SYSROOT)
 
-ffmpeg: libass
+libdrm:
+	meson setup build/libdrm $(TMPDIR)/libdrm-2.4.120 --cross-file=$(CURDIR)/trimui.ini \
+		-Dnouveau=disabled -Domap=disabled -Dexynos=disabled -Dtegra=disabled -Dcairo-tests=disabled \
+		-Dman-pages=disabled -Dvalgrind=disabled -Dfreedreno-kgsl=false -Dudev=false -Dtests=false \
+		-Dintel=disabled -Dradeon=disabled -Damdgpu=disabled -Dvmwgfx=disabled
+	meson compile -C build/libdrm
+	meson install -C build/libdrm --destdir=$(SYSROOT)
+
+ffmpeg: libass libdrm
 	mkdir -p build/ffmpeg && cd build/ffmpeg && \
-	$(TMPDIR)/ffmpeg-6.1.1/configure --prefix=/usr --disable-shared --enable-static \
+	$(TMPDIR)/ffmpeg-4.4.1/configure --prefix=/usr --disable-shared --enable-static \
 		--enable-cross-compile --cross-prefix=aarch64-linux-gnu- --pkg-config=pkg-config \
 		--arch=aarch64 --cpu=cortex-a53 --target-os=linux --enable-pic --enable-neon \
 		--extra-cflags="-I$(PREFIX)/include" --extra-ldflags="-L$(PREFIX)/lib" --sysroot=$(SYSROOT) \
 		--disable-runtime-cpudetect --disable-programs --disable-debug --disable-avdevice \
 		--enable-nonfree --enable-openssl --disable-doc --enable-libass --enable-zlib \
+		--enable-libdrm --enable-libv4l2 --enable-v4l2_m2m --enable-libudev --enable-v4l2-request \
 		--disable-protocols --enable-protocol=file,http,tcp,udp,hls,https,tls,httpproxy \
 		--disable-muxers --disable-encoders --enable-encoder=png
 	make -C build/ffmpeg -j$(shell nproc)
