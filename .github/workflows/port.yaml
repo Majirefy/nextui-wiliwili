@@ -1,8 +1,7 @@
 name: build
 
 on:
-  push:
-    branches: [ smartpro ]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -37,6 +36,10 @@ jobs:
           mkdir -p WiliWili.pak
           install -t WiliWili.pak /opt/trimui/sysroot/usr/lib/libmpv.so.2
           mv build/wiliwili/wiliwili build/wiliwili/resources WiliWili.pak
+          cp WiliWili/config.json WiliWili.pak
+          cp WiliWili/icon.png WiliWili.pak
+          cp WiliWili/launch.sh WiliWili.pak
+          cp pak.json WiliWili.pak
           wget -qO WiliWili.pak/cacert.pem https://curl.se/ca/cacert.pem
 
       - uses: actions/upload-artifact@v4
