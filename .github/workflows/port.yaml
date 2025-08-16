@@ -11,49 +11,38 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: install toolchain
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y meson p7zip-full
-        sudo chown $(id -u):$(id -g) /opt
-        wget -q https://github.com/trimui/toolchain_sdk_smartpro/releases/download/20231018/aarch64-linux-gnu-7.5.0-linaro.tgz
-        wget -q https://github.com/trimui/toolchain_sdk_smartpro/releases/download/20231018/SDK_usr_tg5040_a133p.tgz
-        make toolchain
-    - name: build depency
-      run: make download curl libwebp mpv TMPDIR=${{ runner.temp }}
-    - name: checkout wiliwili
-      uses: actions/checkout@v4
-      with:
-        repository: dragonflylee/wiliwili
-        submodules: true
-        fetch-depth: 0
-        ref: dev
-        path: src/wiliwili
-    - name: build wiliwili
-      run: |
-        make wiliwili
-        install -t WiliWili /opt/trimui/sysroot/usr/lib/libmpv.so.2
-        mv build/wiliwili/wiliwili build/wiliwili/resources WiliWili
-        wget -qO WiliWili/cacert.pem https://curl.se/ca/cacert.pem
-        7z a -mx=9 WiliWili-tg5040.7z ./WiliWili
-    - name: checkout switchfin
-      uses: actions/checkout@v4
-      with:
-        repository: dragonflylee/switchfin
-        submodules: true
-        fetch-tags: true
-        ref: dev
-        path: src/switchfin
-    - name: build switchfin
-      run: |
-        make switchfin
-        install -t Switchfin /opt/trimui/sysroot/usr/lib/libmpv.so.2
-        mv build/switchfin/Switchfin build/switchfin/resources Switchfin
-        wget -qO Switchfin/cacert.pem https://curl.se/ca/cacert.pem
-        7z a -mx=9 Switchfin-tg5040.7z ./Switchfin
-    - name: Upload packages
-      uses: softprops/action-gh-release@v2
-      with:
-        tag_name: tg5040
-        files: "*-tg5040.7z"
+      - uses: actions/checkout@v4
+      - name: install toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y meson p7zip-full
+          sudo chown $(id -u):$(id -g) /opt
+          wget -q https://github.com/trimui/toolchain_sdk_smartpro/releases/download/20231018/aarch64-linux-gnu-7.5.0-linaro.tgz
+          wget -q https://github.com/trimui/toolchain_sdk_smartpro/releases/download/20231018/SDK_usr_tg5040_a133p.tgz
+          make toolchain
+      - name: build depency
+        run: make download curl libwebp mpv TMPDIR=${{ runner.temp }}
+      - name: checkout wiliwili
+        uses: actions/checkout@v4
+        with:
+          repository: dragonflylee/wiliwili
+          submodules: true
+          fetch-depth: 0
+          ref: dev
+          path: src/wiliwili
+      - name: build wiliwili
+        run: |
+          make wiliwili
+          rm -rf WiliWili.pak
+          mkdir -p WiliWili.pak
+          install -t WiliWili.pak /opt/trimui/sysroot/usr/lib/libmpv.so.2
+          mv build/wiliwili/wiliwili build/wiliwili/resources WiliWili.pak
+          wget -qO WiliWili.pak/cacert.pem https://curl.se/ca/cacert.pem
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WiliWili.pak
+          path: WiliWili.pak
+          if-no-files-found: error
+          retention-days: 3
+          overwrite: true
