@@ -69,11 +69,6 @@ jobs:
             ## WiliWili for TrimUI Smart Pro - ${{ inputs.version }}
 
             ### Installation
-            1. Download the `WiliWili.pak.zip` file
-            2. Extract the contents to your TrimUI Smart Pro device
-            3. Launch WiliWili from the apps menu
-
-            ### Changes
-            Please refer to the commit history for details on changes in this release.
+            Download and install through the NextUI Pak Store
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
