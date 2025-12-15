@@ -1,0 +1,74 @@
+name: Create Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v1.5.3)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  update-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate version format
+        run: |
+          if ! echo "${{ inputs.version }}" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Error: Version must be in the format vX.X.X (e.g., v1.5.3)"
+            echo "Provided version: ${{ inputs.version }}"
+            exit 1
+          fi
+          echo "Version format is valid: ${{ inputs.version }}"
+
+      - name: Update version in pak.json
+        run: |
+          sed -i 's/"version": ".*"/"version": "${{ inputs.version }}"/' pak.json
+
+      - name: Commit version update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add pak.json
+          git commit -m "Bump version to ${{ inputs.version }}"
+          git push
+
+  build:
+    needs: update-version
+    uses: ./.github/workflows/port.yaml
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: WiliWili.pak
+          path: WiliWili.pak
+
+      - name: Create release archive
+        run: |
+          7z a -tzip WiliWili.pak.zip ./WiliWili.pak/*
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ inputs.version }}
+          name: ${{ inputs.version }}
+          draft: false
+          prerelease: false
+          files: |
+            WiliWili.pak.zip
+          body: |
+            ## WiliWili for TrimUI Smart Pro - ${{ inputs.version }}
+
+            ### Installation
+            Download and install through the NextUI Pak Store
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

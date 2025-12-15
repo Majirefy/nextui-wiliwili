@@ -143,6 +143,7 @@ wiliwili:
 		-DPLATFORM_DESKTOP=ON \
 		-DUSE_SYSTEM_CURL=ON \
 		-DUSE_SYSTEM_SDL2=ON \
+		-DMPV_NO_FB=ON \
 		-DUSE_SDL2=ON \
 		-DUSE_GLES3=ON
 	cmake --build build/wiliwili
