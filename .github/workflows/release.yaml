@@ -12,7 +12,25 @@ permissions:
   contents: write
 
 jobs:
+  update-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update version in pak.json
+        run: |
+          sed -i 's/"version": ".*"/"version": "${{ inputs.version }}"/' pak.json
+
+      - name: Commit version update
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add pak.json
+          git commit -m "Bump version to ${{ inputs.version }}"
+          git push
+
   build:
+    needs: update-version
     uses: ./.github/workflows/port.yaml
 
   release:
