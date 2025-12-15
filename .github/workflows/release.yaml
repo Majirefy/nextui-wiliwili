@@ -27,7 +27,7 @@ jobs:
 
       - name: Create release archive
         run: |
-          7z a -tzip WiliWili-${{ inputs.version }}.zip ./WiliWili.pak/*
+          7z a -tzip WiliWili.pak.zip ./WiliWili.pak/*
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
@@ -37,12 +37,12 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            WiliWili-${{ inputs.version }}.zip
+            WiliWili.pak.zip
           body: |
             ## WiliWili for TrimUI Smart Pro - ${{ inputs.version }}
 
             ### Installation
-            1. Download the `WiliWili-${{ inputs.version }}.zip` file
+            1. Download the `WiliWili.pak.zip` file
             2. Extract the contents to your TrimUI Smart Pro device
             3. Launch WiliWili from the apps menu
 
