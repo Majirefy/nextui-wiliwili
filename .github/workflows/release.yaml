@@ -17,6 +17,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Validate version format
+        run: |
+          if ! echo "${{ inputs.version }}" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Error: Version must be in the format vX.X.X (e.g., v1.5.3)"
+            echo "Provided version: ${{ inputs.version }}"
+            exit 1
+          fi
+          echo "Version format is valid: ${{ inputs.version }}"
+
       - name: Update version in pak.json
         run: |
           sed -i 's/"version": ".*"/"version": "${{ inputs.version }}"/' pak.json
