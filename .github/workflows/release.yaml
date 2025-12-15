@@ -1,0 +1,52 @@
+name: Create Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v1.5.3)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    uses: ./.github/workflows/port.yaml
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: WiliWili.pak
+          path: WiliWili.pak
+
+      - name: Create release archive
+        run: |
+          7z a -tzip WiliWili.pak.zip ./WiliWili.pak/*
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ inputs.version }}
+          name: Release ${{ inputs.version }}
+          draft: false
+          prerelease: false
+          files: |
+            WiliWili.pak.zip
+          body: |
+            ## WiliWili for TrimUI Smart Pro - ${{ inputs.version }}
+
+            ### Installation
+            1. Download the `WiliWili.pak.zip` file
+            2. Extract the contents to your TrimUI Smart Pro device
+            3. Launch WiliWili from the apps menu
+
+            ### Changes
+            Please refer to the commit history for details on changes in this release.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
